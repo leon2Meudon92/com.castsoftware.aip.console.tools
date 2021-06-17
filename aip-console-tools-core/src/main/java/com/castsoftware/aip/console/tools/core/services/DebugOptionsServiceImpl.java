@@ -6,25 +6,34 @@ import com.castsoftware.aip.console.tools.core.dto.JsonDto;
 import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
 import com.castsoftware.aip.console.tools.core.exceptions.ApplicationServiceException;
 import com.castsoftware.aip.console.tools.core.utils.ApiEndpointHelper;
+import com.castsoftware.aip.console.tools.core.utils.CompatibityFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.java.Log;
 
 @Log
 public class DebugOptionsServiceImpl implements DebugOptionsService {
+    public final boolean isCompatible;
     private RestApiService restApiService;
 
-    public DebugOptionsServiceImpl(RestApiService restApiService) {
+    public DebugOptionsServiceImpl(RestApiService restApiService, ApiInfoDto apiInfoDto) {
+        isCompatible = CompatibityFeature.toVersion(apiInfoDto.getApiVersion())
+                .isHigherThanOrEqual(CompatibityFeature.DEBUG_OPTIONS.getVersion());
         this.restApiService = restApiService;
+        log.info("The target AIP Console version is " + apiInfoDto.getApiVersion() +
+                " and " + CompatibityFeature.DEBUG_OPTIONS.name() + " is " +
+                ((isCompatible) ? "available" : "not available"));
     }
 
     @Override
     public DebugOptionsDto getDebugOptions(String appGuid) throws ApplicationServiceException {
+        if (!isCompatible) {
+            return DebugOptionsDto.builder().build();
+        }
         try {
             return restApiService.getForEntity(ApiEndpointHelper.getDebugOptionsPath(appGuid), new TypeReference<DebugOptionsDto>() {
             });
         } catch (ApiCallException e) {
-            log.info("Debug options not available for the target AIP Console version");
-            return DebugOptionsDto.builder().build();
+            throw new ApplicationServiceException("Unable to retrieve the applications' debug options settings", e);
         }
     }
 
@@ -34,26 +43,30 @@ public class DebugOptionsServiceImpl implements DebugOptionsService {
         // Ony set debug option when ON. Run Analysis always consider these options as OFF(disabled)
         //==============
         DebugOptionsDto oldDebugOptions = getDebugOptions(appGuid);
-        if (newDebugOptions.isShowSql()) {
-            updateShowSqlDebugOption(appGuid, newDebugOptions.isShowSql());
-        }
-        if (newDebugOptions.isActivateAmtMemoryProfile()) {
-            updateAmtProfileDebugOption(appGuid, newDebugOptions.isActivateAmtMemoryProfile());
+        if (isCompatible) {
+            if (newDebugOptions.isShowSql()) {
+                updateShowSqlDebugOption(appGuid, newDebugOptions.isShowSql());
+            }
+            if (newDebugOptions.isActivateAmtMemoryProfile()) {
+                updateAmtProfileDebugOption(appGuid, newDebugOptions.isActivateAmtMemoryProfile());
+            }
         }
         return oldDebugOptions;
     }
 
     @Override
     public void resetDebugOptions(String appGuid, DebugOptionsDto debugOptionsDto) throws ApplicationServiceException {
-        updateShowSqlDebugOption(appGuid, debugOptionsDto.isShowSql());
-        updateAmtProfileDebugOption(appGuid, debugOptionsDto.isActivateAmtMemoryProfile());
+        if (isCompatible) {
+            updateShowSqlDebugOption(appGuid, debugOptionsDto.isShowSql());
+            updateAmtProfileDebugOption(appGuid, debugOptionsDto.isActivateAmtMemoryProfile());
+        }
     }
 
     private void updateShowSqlDebugOption(String appGuid, boolean showSql) throws ApplicationServiceException {
         try {
             restApiService.putForEntity(ApiEndpointHelper.getDebugOptionShowSqlPath(appGuid), JsonDto.of(showSql), String.class);
         } catch (ApiCallException e) {
-            log.info("Debug options not available for the target AIP Console version");
+            throw new ApplicationServiceException("Unable to update the application' Show Sql debug option", e);
         }
     }
 
@@ -66,7 +79,7 @@ public class DebugOptionsServiceImpl implements DebugOptionsService {
             //--------------------------------------------------------------
             restApiService.putForEntity(ApiEndpointHelper.getDebugOptionAmtProfilePath(appGuid), JsonDto.of(amtProfile), String.class);
         } catch (ApiCallException e) {
-            log.info("Debug options not available for the target AIP Console version");
+            throw new ApplicationServiceException("Unable to update the application' AMT Profiling debug option", e);
         }
     }
 }

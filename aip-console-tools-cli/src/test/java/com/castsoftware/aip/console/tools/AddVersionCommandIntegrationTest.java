@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import picocli.CommandLine;
@@ -41,7 +40,7 @@ public class AddVersionCommandIntegrationTest extends AipConsoleToolsCliBaseTest
     @Autowired
     private AddVersionCommand addVersionCommand;
 
-    @MockBean
+    @Mock
     private DebugOptionsService debugOptionsService;
 
     @Override
