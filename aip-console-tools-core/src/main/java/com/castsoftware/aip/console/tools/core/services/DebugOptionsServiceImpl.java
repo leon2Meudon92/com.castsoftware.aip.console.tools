@@ -12,20 +12,26 @@ import lombok.extern.java.Log;
 
 @Log
 public class DebugOptionsServiceImpl implements DebugOptionsService {
-    public final boolean isCompatible;
     private RestApiService restApiService;
 
-    public DebugOptionsServiceImpl(RestApiService restApiService, ApiInfoDto apiInfoDto) {
-        isCompatible = CompatibityFeature.toVersion(apiInfoDto.getApiVersion())
-                .isHigherThanOrEqual(CompatibityFeature.DEBUG_OPTIONS.getVersion());
+    public DebugOptionsServiceImpl(RestApiService restApiService) {
         this.restApiService = restApiService;
-        log.info("The target AIP Console version is " + apiInfoDto.getApiVersion() +
-                " and " + CompatibityFeature.DEBUG_OPTIONS.name() + " is " +
-                ((isCompatible) ? "available" : "not available"));
     }
 
     @Override
-    public DebugOptionsDto getDebugOptions(String appGuid) throws ApplicationServiceException {
+    public boolean isCompatible() {
+        ApiInfoDto apiInfoDto = restApiService.getAipConsoleApiInfo();
+        boolean isCompatible = CompatibityFeature.toVersion(apiInfoDto.getApiVersion())
+                .isHigherThanOrEqual(CompatibityFeature.DEBUG_OPTIONS.getVersion());
+
+        log.info("The target AIP Console version is " + apiInfoDto.getApiVersion() +
+                " and " + CompatibityFeature.DEBUG_OPTIONS.name() + " is " +
+                ((isCompatible) ? "available" : "not available"));
+        return isCompatible;
+    }
+
+    @Override
+    public DebugOptionsDto getDebugOptions(String appGuid, boolean isCompatible) throws ApplicationServiceException {
         if (!isCompatible) {
             return DebugOptionsDto.builder().build();
         }
@@ -38,11 +44,11 @@ public class DebugOptionsServiceImpl implements DebugOptionsService {
     }
 
     @Override
-    public DebugOptionsDto updateDebugOptions(String appGuid, DebugOptionsDto newDebugOptions) throws ApplicationServiceException {
+    public DebugOptionsDto updateDebugOptions(String appGuid, DebugOptionsDto newDebugOptions, boolean isCompatible) throws ApplicationServiceException {
         //==============
         // Ony set debug option when ON. Run Analysis always consider these options as OFF(disabled)
         //==============
-        DebugOptionsDto oldDebugOptions = getDebugOptions(appGuid);
+        DebugOptionsDto oldDebugOptions = getDebugOptions(appGuid, isCompatible);
         if (isCompatible) {
             if (newDebugOptions.isShowSql()) {
                 updateShowSqlDebugOption(appGuid, newDebugOptions.isShowSql());
@@ -55,7 +61,7 @@ public class DebugOptionsServiceImpl implements DebugOptionsService {
     }
 
     @Override
-    public void resetDebugOptions(String appGuid, DebugOptionsDto debugOptionsDto) throws ApplicationServiceException {
+    public void resetDebugOptions(String appGuid, DebugOptionsDto debugOptionsDto, boolean isCompatible) throws ApplicationServiceException {
         if (isCompatible) {
             updateShowSqlDebugOption(appGuid, debugOptionsDto.isShowSql());
             updateAmtProfileDebugOption(appGuid, debugOptionsDto.isActivateAmtMemoryProfile());

@@ -14,7 +14,6 @@ import com.castsoftware.aip.console.tools.core.exceptions.ApplicationServiceExce
 import com.castsoftware.aip.console.tools.core.exceptions.JobServiceException;
 import com.castsoftware.aip.console.tools.core.services.ApplicationService;
 import com.castsoftware.aip.console.tools.core.services.DebugOptionsService;
-import com.castsoftware.aip.console.tools.core.services.DebugOptionsServiceImpl;
 import com.castsoftware.aip.console.tools.core.services.JobsService;
 import com.castsoftware.aip.console.tools.core.services.RestApiService;
 import com.castsoftware.aip.console.tools.core.utils.ApiEndpointHelper;
@@ -53,6 +52,8 @@ public class AnalyzeCommand implements Callable<Integer> {
     private final RestApiService restApiService;
     private final JobsService jobsService;
     private final ApplicationService applicationService;
+    private final DebugOptionsService debugOptionsService;
+
     @CommandLine.Mixin
     private SharedOptions sharedOptions;
 
@@ -89,10 +90,11 @@ public class AnalyzeCommand implements Callable<Integer> {
             , defaultValue = "false")
     private boolean amtProfiling;
 
-    public AnalyzeCommand(RestApiService restApiService, JobsService jobsService, ApplicationService applicationService) {
+    public AnalyzeCommand(RestApiService restApiService, JobsService jobsService, ApplicationService applicationService, DebugOptionsService debugOptionsService) {
         this.restApiService = restApiService;
         this.jobsService = jobsService;
         this.applicationService = applicationService;
+        this.debugOptionsService = debugOptionsService;
     }
 
     @Override
@@ -114,7 +116,6 @@ public class AnalyzeCommand implements Callable<Integer> {
         }
         String applicationGuid;
         ApiInfoDto apiInfoDto = restApiService.getAipConsoleApiInfo();
-        DebugOptionsService debugOptionsService = new DebugOptionsServiceImpl(restApiService, apiInfoDto);
 
         log.info("[Debug options] Show Sql is '{}'", showSql);
         log.info("[Debug options] AMT Profiling is '{}'", amtProfiling);
@@ -167,8 +168,9 @@ public class AnalyzeCommand implements Callable<Integer> {
                     .versionGuid(versionToAnalyze.getGuid())
                     .releaseAndSnapshotDate(new Date());
 
+            boolean debugOptionsAvailable = debugOptionsService.isCompatible();
             DebugOptionsDto oldDebugOptions = debugOptionsService.updateDebugOptions(applicationGuid,
-                    DebugOptionsDto.builder().showSql(showSql).activateAmtMemoryProfile(amtProfiling).build());
+                    DebugOptionsDto.builder().showSql(showSql).activateAmtMemoryProfile(amtProfiling).build(), debugOptionsAvailable);
 
             log.info("Running analysis for application '{}' with version '{}'", applicationName, versionToAnalyze.getName());
             String jobGuid = jobsService.startJob(builder);
@@ -178,8 +180,8 @@ public class AnalyzeCommand implements Callable<Integer> {
             JobStatusWithSteps jobStatus = jobsService.pollAndWaitForJobFinished(jobGuid, Function.identity(), sharedOptions.isVerbose());
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
 
-            DebugOptionsDto debugOptions = debugOptionsService.getDebugOptions(applicationGuid);
-            debugOptionsService.resetDebugOptions(applicationGuid, oldDebugOptions);
+            DebugOptionsDto debugOptions = debugOptionsService.getDebugOptions(applicationGuid, debugOptionsAvailable);
+            debugOptionsService.resetDebugOptions(applicationGuid, oldDebugOptions, debugOptionsAvailable);
             if (JobState.COMPLETED == jobStatus.getState()) {
                 if (debugOptions.isActivateAmtMemoryProfile()) {
                     log.info("[Debug options] Amt Profiling file download URL: {}",

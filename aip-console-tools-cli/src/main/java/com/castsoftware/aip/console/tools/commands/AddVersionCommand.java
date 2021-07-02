@@ -15,7 +15,6 @@ import com.castsoftware.aip.console.tools.core.exceptions.PackagePathInvalidExce
 import com.castsoftware.aip.console.tools.core.exceptions.UploadException;
 import com.castsoftware.aip.console.tools.core.services.ApplicationService;
 import com.castsoftware.aip.console.tools.core.services.DebugOptionsService;
-import com.castsoftware.aip.console.tools.core.services.DebugOptionsServiceImpl;
 import com.castsoftware.aip.console.tools.core.services.JobsService;
 import com.castsoftware.aip.console.tools.core.services.RestApiService;
 import com.castsoftware.aip.console.tools.core.services.UploadService;
@@ -51,15 +50,17 @@ public class AddVersionCommand implements Callable<Integer> {
     private final JobsService jobsService;
     private final UploadService uploadService;
     private final ApplicationService applicationService;
+    private final DebugOptionsService debugOptionsService;
 
     @CommandLine.Mixin
     private SharedOptions sharedOptions;
 
-    public AddVersionCommand(RestApiService restApiService, JobsService jobsService, UploadService uploadService, ApplicationService applicationService) {
+    public AddVersionCommand(RestApiService restApiService, JobsService jobsService, UploadService uploadService, ApplicationService applicationService, DebugOptionsService debugOptionsService) {
         this.restApiService = restApiService;
         this.jobsService = jobsService;
         this.uploadService = uploadService;
         this.applicationService = applicationService;
+        this.debugOptionsService = debugOptionsService;
     }
 
     /**
@@ -154,14 +155,13 @@ public class AddVersionCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         ApiInfoDto apiInfo = null;
-        DebugOptionsService debugOptionsService;
+        boolean debugOptionAvailable = debugOptionsService.isCompatible();
         try {
             if (sharedOptions.getTimeout() != Constants.DEFAULT_HTTP_TIMEOUT) {
                 restApiService.setTimeout(sharedOptions.getTimeout(), TimeUnit.SECONDS);
             }
             restApiService.validateUrlAndKey(sharedOptions.getFullServerRootUrl(), sharedOptions.getUsername(), sharedOptions.getApiKeyValue());
             apiInfo = restApiService.getAipConsoleApiInfo();
-            debugOptionsService = new DebugOptionsServiceImpl(restApiService, apiInfo);
         } catch (ApiKeyMissingException e) {
             return Constants.RETURN_NO_PASSWORD;
         } catch (ApiCallException e) {
@@ -223,7 +223,7 @@ public class AddVersionCommand implements Callable<Integer> {
             }
 
             DebugOptionsDto oldDebugOptions = debugOptionsService.updateDebugOptions(applicationGuid,
-                    DebugOptionsDto.builder().showSql(showSql).activateAmtMemoryProfile(amtProfiling).build());
+                    DebugOptionsDto.builder().showSql(showSql).activateAmtMemoryProfile(amtProfiling).build(), debugOptionAvailable);
 
             String jobGuid = jobsService.startAddVersionJob(builder);
             // add a shutdown hook, to cancel the job
@@ -233,8 +233,8 @@ public class AddVersionCommand implements Callable<Integer> {
             JobStatusWithSteps jobStatus = jobsService.pollAndWaitForJobFinished(jobGuid, Function.identity(), sharedOptions.isVerbose());
             // Deregister the shutdown hook since the job is finished and we won't need to cancel it
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
-            DebugOptionsDto debugOptions = debugOptionsService.getDebugOptions(applicationGuid);
-            debugOptionsService.resetDebugOptions(applicationGuid, oldDebugOptions);
+            DebugOptionsDto debugOptions = debugOptionsService.getDebugOptions(applicationGuid, debugOptionAvailable);
+            debugOptionsService.resetDebugOptions(applicationGuid, oldDebugOptions, debugOptionAvailable);
             if (JobState.COMPLETED == jobStatus.getState()) {
                 if (debugOptions.isActivateAmtMemoryProfile()) {
                     log.info("[Debug options] Amt Profiling file download URL: {}",

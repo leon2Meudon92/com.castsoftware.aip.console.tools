@@ -171,7 +171,9 @@ public class AnalyzeCommandIntegrationTest extends AipConsoleToolsCliBaseTest {
         when(jobsService.startJob(any(JobRequestBuilder.class))).thenReturn(TestConstants.TEST_JOB_GUID);
         DebugOptionsDto debugOptions = Mockito.mock(DebugOptionsDto.class);
         when(debugOptions.isActivateAmtMemoryProfile()).thenReturn(false);
-        when(debugOptionsService.getDebugOptions(TestConstants.TEST_APP_GUID)).thenReturn(debugOptions);
+        boolean available = true;
+        when(debugOptionsService.isCompatible()).thenReturn(available);
+        when(debugOptionsService.getDebugOptions(TestConstants.TEST_APP_GUID, available)).thenReturn(debugOptions);
 
         JobStatusWithSteps jobStatus = new JobStatusWithSteps();
         jobStatus.setAppGuid(TestConstants.TEST_APP_GUID);
