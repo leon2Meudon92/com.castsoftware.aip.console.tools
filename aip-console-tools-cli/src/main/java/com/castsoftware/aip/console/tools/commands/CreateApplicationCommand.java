@@ -102,7 +102,7 @@ public class CreateApplicationCommand implements Callable<Integer> {
                 }
             }
             String jobGuid = jobsService.startCreateApplication(applicationName, nodeGuid, domainName, inPlaceMode, apiInfo.getApiVersion());
-            log.info("Started job to create new application.");
+            log.info("Started job to create new application {}.", jobGuid);
             return jobsService.pollAndWaitForJobFinished(jobGuid, (jobDetails) -> {
                 if (jobDetails.getState() != JobState.COMPLETED) {
                     log.error("Creation of the application failed with status '{}'", jobDetails.getState());

@@ -1,7 +1,11 @@
 package com.castsoftware.aip.console.tools.core.utils;
 
+import com.castsoftware.aip.console.tools.core.dto.jobs.CreateApplicationJobRequest;
+import com.castsoftware.aip.console.tools.core.dto.jobs.CreateJobsRequest;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobType;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
 
 public class ApiEndpointHelper {
 
@@ -78,11 +82,25 @@ public class ApiEndpointHelper {
         return getJobsEndpoint() + "/" + jobGuid;
     }
 
-    public static String getEndPoint(JobType jobType, String apiVersion) {
-        boolean isV2 = StringUtils.isNotEmpty(apiVersion) && apiVersion.startsWith("2.");
+    public static boolean isV2(String apiVersion) {
+        return StringUtils.isNotEmpty(apiVersion) && apiVersion.startsWith("2.");
+    }
+
+    public static EndPointRequest getEndPoint(JobType jobType, Map<String, String> jobParams, String apiVersion) {
         switch (jobType) {
             case DECLARE_APPLICATION:
-                return isV2 ? getJobsEndpoint() + CREATE_APPLICATION_ENDPOINT : getJobsEndpoint();
+                if (isV2(apiVersion)) {
+                    CreateApplicationJobRequest request = new CreateApplicationJobRequest();
+                    request.setAppName(jobParams.get(Constants.PARAM_APP_NAME));
+                    request.setInPlaceMode(Boolean.parseBoolean(jobParams.getOrDefault(Constants.PARAM_INPLACE_MODE, "false")));
+                    request.setDomainName(jobParams.getOrDefault(Constants.PARAM_DOMAIN_NAME, ""));
+                    return EndPointRequest.builder().endPoint(getJobsEndpoint() + CREATE_APPLICATION_ENDPOINT).request(request).build();
+                } else {
+                    CreateJobsRequest request = new CreateJobsRequest();
+                    request.setJobType(jobType);
+                    request.setJobParameters(jobParams);
+                    return EndPointRequest.builder().endPoint(getJobsEndpoint()).request(request).build();
+                }
         }
         return null;
     }

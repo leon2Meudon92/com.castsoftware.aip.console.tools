@@ -1,11 +1,21 @@
 package com.castsoftware.aip.console.tools.core.services;
 
 import com.castsoftware.aip.console.tools.core.dto.ApiInfoDto;
-import com.castsoftware.aip.console.tools.core.dto.jobs.*;
+import com.castsoftware.aip.console.tools.core.dto.jobs.ChangeJobStateRequest;
+import com.castsoftware.aip.console.tools.core.dto.jobs.CreateJobsRequest;
+import com.castsoftware.aip.console.tools.core.dto.jobs.JobRequestBuilder;
+import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
+import com.castsoftware.aip.console.tools.core.dto.jobs.JobStatus;
+import com.castsoftware.aip.console.tools.core.dto.jobs.JobStatusWithSteps;
+import com.castsoftware.aip.console.tools.core.dto.jobs.JobType;
+import com.castsoftware.aip.console.tools.core.dto.jobs.LogContentDto;
+import com.castsoftware.aip.console.tools.core.dto.jobs.LogsDto;
+import com.castsoftware.aip.console.tools.core.dto.jobs.SuccessfulJobStartDto;
 import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
 import com.castsoftware.aip.console.tools.core.exceptions.JobServiceException;
 import com.castsoftware.aip.console.tools.core.utils.ApiEndpointHelper;
 import com.castsoftware.aip.console.tools.core.utils.Constants;
+import com.castsoftware.aip.console.tools.core.utils.EndPointRequest;
 import com.castsoftware.aip.console.tools.core.utils.LogUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.java.Log;
@@ -64,17 +74,13 @@ public class JobsServiceImpl implements JobsService {
             jobParams.put(Constants.PARAM_NODE_GUID, nodeGuid);
         }
         if (StringUtils.isNotBlank(domainName)) {
-            jobParams.put("domainName", domainName);
+            jobParams.put(Constants.PARAM_DOMAIN_NAME, domainName);
         }
 
         try {
-            CreateJobsRequest request = new CreateJobsRequest();
-            request.setJobType(JobType.DECLARE_APPLICATION);
-            request.setJobParameters(jobParams);
-            String jobsEndpoint = ApiEndpointHelper.getEndPoint(request.getJobType(), apiVersion);
-
-            SuccessfulJobStartDto jobStartDto = restApiService.postForEntity(jobsEndpoint, request, SuccessfulJobStartDto.class);
-            return jobStartDto.getJobGuid();
+            EndPointRequest jobsURLEndpoint = ApiEndpointHelper.getEndPoint(JobType.DECLARE_APPLICATION, jobParams, apiVersion);
+            SuccessfulJobStartDto jobStartDto = restApiService.postForEntity(jobsURLEndpoint.getEndPoint(), jobsURLEndpoint.getRequest(), SuccessfulJobStartDto.class);
+            return ApiEndpointHelper.isV2(apiVersion) ? jobStartDto.getGuid() : jobStartDto.getJobGuid();
         } catch (ApiCallException e) {
             log.log(Level.SEVERE, "Unable to create new application '" + applicationName + "'", e);
             throw new JobServiceException("Creation of application failed", e);

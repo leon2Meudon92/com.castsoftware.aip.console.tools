@@ -60,6 +60,7 @@ public class Constants {
     public static final String PARAM_APP_NAME = "appName";
     public static final String PARAM_INPLACE_MODE = "inPlaceMode";
     public static final String PARAM_NODE_GUID = "nodeGuid";
+    public static final String PARAM_DOMAIN_NAME = "domainName";
     public static final String PARAM_VERSION_NAME = "versionName";
     public static final String PARAM_SNAPSHOT_CAPTURE_DATE = "snapshotCaptureDate";
     public static final String PARAM_START_STEP = "startStep";

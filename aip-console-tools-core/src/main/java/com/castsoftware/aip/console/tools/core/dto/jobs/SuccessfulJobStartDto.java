@@ -8,14 +8,27 @@ public class SuccessfulJobStartDto {
     private String appGuid;
     private String jobGuid;
     private String jobUrl;
+    private String guid;
 
     public SuccessfulJobStartDto() {
+    }
+
+    public SuccessfulJobStartDto(String guid) {
+        this.guid = guid;
     }
 
     public SuccessfulJobStartDto(String appGuid, String jobGuid, String jobUrl) {
         this.appGuid = appGuid;
         this.jobGuid = jobGuid;
         this.jobUrl = jobUrl;
+    }
+
+    public String getGuid() {
+        return guid;
+    }
+
+    public void setGuid(String guid) {
+        this.guid = guid;
     }
 
     public String getAppGuid() {
