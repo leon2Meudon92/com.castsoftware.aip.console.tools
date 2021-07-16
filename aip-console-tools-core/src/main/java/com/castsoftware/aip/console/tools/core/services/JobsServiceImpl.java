@@ -1,16 +1,7 @@
 package com.castsoftware.aip.console.tools.core.services;
 
 import com.castsoftware.aip.console.tools.core.dto.ApiInfoDto;
-import com.castsoftware.aip.console.tools.core.dto.jobs.ChangeJobStateRequest;
-import com.castsoftware.aip.console.tools.core.dto.jobs.CreateJobsRequest;
-import com.castsoftware.aip.console.tools.core.dto.jobs.JobRequestBuilder;
-import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
-import com.castsoftware.aip.console.tools.core.dto.jobs.JobStatus;
-import com.castsoftware.aip.console.tools.core.dto.jobs.JobStatusWithSteps;
-import com.castsoftware.aip.console.tools.core.dto.jobs.JobType;
-import com.castsoftware.aip.console.tools.core.dto.jobs.LogContentDto;
-import com.castsoftware.aip.console.tools.core.dto.jobs.LogsDto;
-import com.castsoftware.aip.console.tools.core.dto.jobs.SuccessfulJobStartDto;
+import com.castsoftware.aip.console.tools.core.dto.jobs.*;
 import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
 import com.castsoftware.aip.console.tools.core.exceptions.JobServiceException;
 import com.castsoftware.aip.console.tools.core.utils.ApiEndpointHelper;
@@ -43,7 +34,7 @@ public class JobsServiceImpl implements JobsService {
 
     public JobsServiceImpl(RestApiService restApiService) {
         this.restApiService = restApiService;
-        this.pollingSleepDuration = POLL_SLEEP_DURATION;
+        pollingSleepDuration = POLL_SLEEP_DURATION;
     }
 
     public JobsServiceImpl(RestApiService restApiService, long pollingSleepDuration) {
@@ -61,11 +52,11 @@ public class JobsServiceImpl implements JobsService {
 
     @Override
     public String startCreateApplication(String applicationName, String nodeGuid, boolean inplaceMode) throws JobServiceException {
-        return startCreateApplication(applicationName, nodeGuid, null, inplaceMode);
+        return startCreateApplication(applicationName, nodeGuid, null, inplaceMode, null);
     }
 
     @Override
-    public String startCreateApplication(String applicationName, String nodeGuid, String domainName, boolean inplaceMode) throws JobServiceException {
+    public String startCreateApplication(String applicationName, String nodeGuid, String domainName, boolean inplaceMode, String apiVersion) throws JobServiceException {
         Map<String, String> jobParams = new HashMap<>();
         jobParams.put(Constants.PARAM_APP_NAME, applicationName);
         jobParams.put(Constants.PARAM_INPLACE_MODE, String.valueOf(inplaceMode));
@@ -77,10 +68,11 @@ public class JobsServiceImpl implements JobsService {
         }
 
         try {
-            String jobsEndpoint = ApiEndpointHelper.getJobsEndpoint();
             CreateJobsRequest request = new CreateJobsRequest();
             request.setJobType(JobType.DECLARE_APPLICATION);
             request.setJobParameters(jobParams);
+            String jobsEndpoint = ApiEndpointHelper.getEndPoint(request.getJobType(), apiVersion);
+
             SuccessfulJobStartDto jobStartDto = restApiService.postForEntity(jobsEndpoint, request, SuccessfulJobStartDto.class);
             return jobStartDto.getJobGuid();
         } catch (ApiCallException e) {

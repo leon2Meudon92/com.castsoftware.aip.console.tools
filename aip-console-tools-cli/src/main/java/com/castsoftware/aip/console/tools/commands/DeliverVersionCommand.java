@@ -1,16 +1,12 @@
 package com.castsoftware.aip.console.tools.commands;
 
+import com.castsoftware.aip.console.tools.core.dto.ApiInfoDto;
 import com.castsoftware.aip.console.tools.core.dto.ApplicationDto;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobRequestBuilder;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobStatusWithSteps;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobType;
-import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
-import com.castsoftware.aip.console.tools.core.exceptions.ApiKeyMissingException;
-import com.castsoftware.aip.console.tools.core.exceptions.ApplicationServiceException;
-import com.castsoftware.aip.console.tools.core.exceptions.JobServiceException;
-import com.castsoftware.aip.console.tools.core.exceptions.PackagePathInvalidException;
-import com.castsoftware.aip.console.tools.core.exceptions.UploadException;
+import com.castsoftware.aip.console.tools.core.exceptions.*;
 import com.castsoftware.aip.console.tools.core.services.ApplicationService;
 import com.castsoftware.aip.console.tools.core.services.JobsService;
 import com.castsoftware.aip.console.tools.core.services.RestApiService;
@@ -160,11 +156,13 @@ public class DeliverVersionCommand implements Callable<Integer> {
             return Constants.RETURN_APPLICATION_INFO_MISSING;
         }
 
+        ApiInfoDto apiInfo = null;
         try {
             if (sharedOptions.getTimeout() != Constants.DEFAULT_HTTP_TIMEOUT) {
                 restApiService.setTimeout(sharedOptions.getTimeout(), TimeUnit.SECONDS);
             }
             restApiService.validateUrlAndKey(sharedOptions.getFullServerRootUrl(), sharedOptions.getUsername(), sharedOptions.getApiKeyValue());
+            apiInfo = restApiService.getAipConsoleApiInfo();
         } catch (ApiKeyMissingException e) {
             return Constants.RETURN_NO_PASSWORD;
         } catch (ApiCallException e) {
@@ -178,7 +176,7 @@ public class DeliverVersionCommand implements Callable<Integer> {
 
         try {
             log.info("Searching for application '{}' on AIP Console", applicationName);
-            applicationGuid = applicationService.getOrCreateApplicationFromName(applicationName, autoCreate, nodeName, domainName, sharedOptions.isVerbose());
+            applicationGuid = applicationService.getOrCreateApplicationFromName(applicationName, autoCreate, nodeName, domainName, sharedOptions.isVerbose(), apiInfo.getApiVersion());
             if (StringUtils.isBlank(applicationGuid)) {
                 String message = autoCreate ?
                         "Creation of the application '{}' failed on AIP Console" :

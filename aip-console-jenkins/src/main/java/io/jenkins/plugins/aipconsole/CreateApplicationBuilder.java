@@ -1,5 +1,6 @@
 package io.jenkins.plugins.aipconsole;
 
+import com.castsoftware.aip.console.tools.core.dto.ApiInfoDto;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
 import com.castsoftware.aip.console.tools.core.dto.jobs.LogContentDto;
 import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
@@ -32,16 +33,7 @@ import java.io.PrintStream;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_error_emptyApiKey;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_error_emptyUrl;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_error_jobFailed;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_error_jobServiceException;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_error_unavailable;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_info_jobStarted;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_info_startJob;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_info_success;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_DescriptorImpl_displayName;
-import static io.jenkins.plugins.aipconsole.Messages.JobsSteps_changed;
+import static io.jenkins.plugins.aipconsole.Messages.*;
 
 /**
  * Builder to run a "Create application" step.
@@ -177,7 +169,8 @@ public class CreateApplicationBuilder extends BaseActionBuilder implements Simpl
             }
 
             log.println(CreateApplicationBuilder_CreateApplication_info_startJob());
-            String createJobGuid = jobsService.startCreateApplication(expandedAppName, null, expandedDomainName, inPlaceMode);
+            ApiInfoDto apiInfo = apiService.getAipConsoleApiInfo();
+            String createJobGuid = jobsService.startCreateApplication(expandedAppName, null, expandedDomainName, inPlaceMode, apiInfo.getApiVersion());
             log.println(CreateApplicationBuilder_CreateApplication_info_jobStarted());
             Consumer<LogContentDto> pollingCallback = (!getDescriptor().configuration.isVerbose()) ? null :
                     logContentDto -> {

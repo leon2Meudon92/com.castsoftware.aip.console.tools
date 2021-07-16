@@ -1,5 +1,6 @@
 package com.castsoftware.aip.console.tools.commands;
 
+import com.castsoftware.aip.console.tools.core.dto.ApiInfoDto;
 import com.castsoftware.aip.console.tools.core.dto.NodeDto;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
 import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
@@ -71,11 +72,13 @@ public class CreateApplicationCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        ApiInfoDto apiInfo = null;
         try {
             if (sharedOptions.getTimeout() != Constants.DEFAULT_HTTP_TIMEOUT) {
                 restApiService.setTimeout(sharedOptions.getTimeout(), TimeUnit.SECONDS);
             }
             restApiService.validateUrlAndKey(sharedOptions.getFullServerRootUrl(), sharedOptions.getUsername(), sharedOptions.getApiKeyValue());
+            apiInfo = restApiService.getAipConsoleApiInfo();
         } catch (ApiKeyMissingException e) {
             return Constants.RETURN_NO_PASSWORD;
         } catch (ApiCallException e) {
@@ -98,7 +101,7 @@ public class CreateApplicationCommand implements Callable<Integer> {
                     return Constants.RETURN_APPLICATION_NOT_FOUND;
                 }
             }
-            String jobGuid = jobsService.startCreateApplication(applicationName, nodeGuid, domainName, inPlaceMode);
+            String jobGuid = jobsService.startCreateApplication(applicationName, nodeGuid, domainName, inPlaceMode, apiInfo.getApiVersion());
             log.info("Started job to create new application.");
             return jobsService.pollAndWaitForJobFinished(jobGuid, (jobDetails) -> {
                 if (jobDetails.getState() != JobState.COMPLETED) {

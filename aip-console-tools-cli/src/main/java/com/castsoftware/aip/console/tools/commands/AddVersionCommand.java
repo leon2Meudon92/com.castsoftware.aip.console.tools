@@ -7,18 +7,8 @@ import com.castsoftware.aip.console.tools.core.dto.jobs.JobRequestBuilder;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobStatusWithSteps;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobType;
-import com.castsoftware.aip.console.tools.core.exceptions.ApiCallException;
-import com.castsoftware.aip.console.tools.core.exceptions.ApiKeyMissingException;
-import com.castsoftware.aip.console.tools.core.exceptions.ApplicationServiceException;
-import com.castsoftware.aip.console.tools.core.exceptions.JobServiceException;
-import com.castsoftware.aip.console.tools.core.exceptions.PackagePathInvalidException;
-import com.castsoftware.aip.console.tools.core.exceptions.UploadException;
-import com.castsoftware.aip.console.tools.core.services.ApplicationService;
-import com.castsoftware.aip.console.tools.core.services.DebugOptionsService;
-import com.castsoftware.aip.console.tools.core.services.DebugOptionsServiceImpl;
-import com.castsoftware.aip.console.tools.core.services.JobsService;
-import com.castsoftware.aip.console.tools.core.services.RestApiService;
-import com.castsoftware.aip.console.tools.core.services.UploadService;
+import com.castsoftware.aip.console.tools.core.exceptions.*;
+import com.castsoftware.aip.console.tools.core.services.*;
 import com.castsoftware.aip.console.tools.core.utils.ApiEndpointHelper;
 import com.castsoftware.aip.console.tools.core.utils.Constants;
 import com.castsoftware.aip.console.tools.core.utils.VersionObjective;
@@ -188,7 +178,7 @@ public class AddVersionCommand implements Callable<Integer> {
         try {
             if (StringUtils.isBlank(applicationGuid)) {
                 log.info("Searching for application '{}' on AIP Console", applicationName);
-                applicationGuid = applicationService.getOrCreateApplicationFromName(applicationName, autoCreate, nodeName, domainName, sharedOptions.isVerbose());
+                applicationGuid = applicationService.getOrCreateApplicationFromName(applicationName, autoCreate, nodeName, domainName, sharedOptions.isVerbose(), apiInfo.getApiVersion());
                 if (StringUtils.isBlank(applicationGuid)) {
                     String message = autoCreate ?
                             "Creation of the application '{}' failed on AIP Console" :

@@ -1,15 +1,6 @@
 package com.castsoftware.aip.console.tools.core.services;
 
-import com.castsoftware.aip.console.tools.core.dto.ApplicationDto;
-import com.castsoftware.aip.console.tools.core.dto.Applications;
-import com.castsoftware.aip.console.tools.core.dto.BaseDto;
-import com.castsoftware.aip.console.tools.core.dto.DebugOptionsDto;
-import com.castsoftware.aip.console.tools.core.dto.DeliveryConfigurationDto;
-import com.castsoftware.aip.console.tools.core.dto.JsonDto;
-import com.castsoftware.aip.console.tools.core.dto.NodeDto;
-import com.castsoftware.aip.console.tools.core.dto.PendingResultDto;
-import com.castsoftware.aip.console.tools.core.dto.VersionDto;
-import com.castsoftware.aip.console.tools.core.dto.VersionStatus;
+import com.castsoftware.aip.console.tools.core.dto.*;
 import com.castsoftware.aip.console.tools.core.dto.jobs.DeliveryPackageDto;
 import com.castsoftware.aip.console.tools.core.dto.jobs.DiscoverPackageRequest;
 import com.castsoftware.aip.console.tools.core.dto.jobs.JobState;
@@ -23,14 +14,7 @@ import lombok.extern.java.Log;
 import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -42,7 +26,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     public ApplicationServiceImpl(RestApiService restApiService, JobsService jobsService) {
         this.restApiService = restApiService;
-        this.jobService = jobsService;
+        jobService = jobsService;
     }
 
     @Override
@@ -93,11 +77,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public String getOrCreateApplicationFromName(String applicationName, boolean autoCreate, String nodeName) throws ApplicationServiceException {
-        return getOrCreateApplicationFromName(applicationName, autoCreate, nodeName, null, true);
+        return getOrCreateApplicationFromName(applicationName, autoCreate, nodeName, null, true, null);
     }
 
     @Override
-    public String getOrCreateApplicationFromName(String applicationName, boolean autoCreate, String nodeName, String domainName, boolean logOutput) throws ApplicationServiceException {
+    public String getOrCreateApplicationFromName(String applicationName, boolean autoCreate, String nodeName, String domainName, boolean logOutput, String apiVersion) throws ApplicationServiceException {
         if (StringUtils.isBlank(applicationName)) {
             throw new ApplicationServiceException("No application name provided.");
         }
@@ -132,7 +116,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 }
                 log.info(infoMessage);
 
-                String jobGuid = jobService.startCreateApplication(applicationName, nodeGuid, domainName, false);
+                String jobGuid = jobService.startCreateApplication(applicationName, nodeGuid, domainName, false, apiVersion);
                 return jobService.pollAndWaitForJobFinished(jobGuid, (s) -> s.getState() == JobState.COMPLETED ? s.getAppGuid() : null, logOutput);
             } catch (JobServiceException | ApiCallException e) {
                 log.log(Level.SEVERE, "Could not create the application due to the following error", e);

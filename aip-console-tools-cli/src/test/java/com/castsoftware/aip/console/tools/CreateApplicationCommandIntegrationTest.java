@@ -21,9 +21,7 @@ import java.util.function.Function;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
@@ -71,7 +69,7 @@ public class CreateApplicationCommandIntegrationTest extends AipConsoleToolsCliB
         jobStatus.setCreated(new Date());
         jobStatus.setAppName(TestConstants.TEST_CREATRE_APP);
 
-        when(jobsService.startCreateApplication(any(String.class), eq(null), any(String.class), anyBoolean())).thenReturn(TestConstants.TEST_JOB_GUID);
+        when(jobsService.startCreateApplication(any(String.class), eq(null), any(String.class), anyBoolean(), anyString())).thenReturn(TestConstants.TEST_JOB_GUID);
         when(jobsService.pollAndWaitForJobFinished(any(String.class), any(Function.class), anyBoolean())).thenReturn(Constants.RETURN_OK);
 
         runStringArgs(createApplicationCommand, args);

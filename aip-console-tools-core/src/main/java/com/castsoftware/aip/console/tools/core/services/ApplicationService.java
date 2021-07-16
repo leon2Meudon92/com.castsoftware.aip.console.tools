@@ -66,10 +66,11 @@ public interface ApplicationService {
      * @param nodeName        The name of the node on which the application
      * @param domainName      The name of the domain to assign to the application
      * @param logOutput whether the log is displa
+     * @param apiVersion for URL endpoint compatibility
      * @return An application GUID or null if non was found
      * @throws ApplicationServiceException
      */
-    String getOrCreateApplicationFromName(String applicationName, boolean autoCreate, String nodeName, String domainName, boolean logOutput) throws ApplicationServiceException;
+    String getOrCreateApplicationFromName(String applicationName, boolean autoCreate, String nodeName, String domainName, boolean logOutput, String apiVersion) throws ApplicationServiceException;
 
     /**
      * Retrieve an application's version

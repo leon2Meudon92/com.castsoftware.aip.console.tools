@@ -19,14 +19,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.StrictStubs.class)
@@ -48,7 +42,7 @@ public class ApplicationServiceImplTest {
 
     @Before
     public void setUp() {
-        this.applicationService = new ApplicationServiceImpl(restApiService, jobsService);
+        applicationService = new ApplicationServiceImpl(restApiService, jobsService);
     }
 
     @Test(expected = ApplicationServiceException.class)
@@ -100,7 +94,7 @@ public class ApplicationServiceImplTest {
     public void testGetOrCreateApplicationCreateJobFailure() throws Exception {
         when(restApiService.getForEntity(API_APP_ENDPOINT, Applications.class))
                 .thenReturn(new Applications());
-        when(jobsService.startCreateApplication(TEST_APP_NAME, null, null, false))
+        when(jobsService.startCreateApplication(TEST_APP_NAME, null, null, false, null))
                 .thenThrow(new JobServiceException());
 
         applicationService.getOrCreateApplicationFromName(TEST_APP_NAME, true);
@@ -111,7 +105,7 @@ public class ApplicationServiceImplTest {
     public void testGetOrCreateApplicationJobFailed() throws Exception {
         when(restApiService.getForEntity(API_APP_ENDPOINT, Applications.class))
                 .thenReturn(new Applications());
-        when(jobsService.startCreateApplication(TEST_APP_NAME, null, null, false))
+        when(jobsService.startCreateApplication(TEST_APP_NAME, null, null, false, null))
                 .thenReturn(TEST_JOB_GUID);
         when(jobsService.pollAndWaitForJobFinished(eq(TEST_JOB_GUID), any(), anyBoolean()))
                 .thenReturn(null);
@@ -124,7 +118,7 @@ public class ApplicationServiceImplTest {
     public void testGetOrCreateApplicationOk() throws Exception {
         when(restApiService.getForEntity(API_APP_ENDPOINT, Applications.class))
                 .thenReturn(new Applications());
-        when(jobsService.startCreateApplication(TEST_APP_NAME, null, null, false))
+        when(jobsService.startCreateApplication(TEST_APP_NAME, null, null, false, null))
                 .thenReturn(TEST_JOB_GUID);
         when(jobsService.pollAndWaitForJobFinished(eq(TEST_JOB_GUID), any(), anyBoolean()))
                 .thenReturn(TEST_APP_GUID);

@@ -1,5 +1,8 @@
 package com.castsoftware.aip.console.tools.core.utils;
 
+import com.castsoftware.aip.console.tools.core.dto.jobs.JobType;
+import org.apache.commons.lang3.StringUtils;
+
 public class ApiEndpointHelper {
 
     private static final String ROOT_PATH = "/api";
@@ -11,6 +14,7 @@ public class ApiEndpointHelper {
     private static final String DEBUG_OPTIONS_ENDPOINT = "/debug-options";
     private static final String SHOW_SQL_ENDPOINT = "/show-sql";
     private static final String AMT_PROFILE_ENDPOINT = "/activate-amt-memory-profile";
+    private static final String CREATE_APPLICATION_ENDPOINT = "/create-application";
 
     public static String getRootPath() {
         return ROOT_PATH + "/";
@@ -72,5 +76,14 @@ public class ApiEndpointHelper {
         assert jobGuid != null && !jobGuid.isEmpty();
 
         return getJobsEndpoint() + "/" + jobGuid;
+    }
+
+    public static String getEndPoint(JobType jobType, String apiVersion) {
+        boolean isV2 = StringUtils.isNotEmpty(apiVersion) && apiVersion.startsWith("2.");
+        switch (jobType) {
+            case DECLARE_APPLICATION:
+                return isV2 ? getJobsEndpoint() + CREATE_APPLICATION_ENDPOINT : getJobsEndpoint();
+        }
+        return null;
     }
 }

@@ -24,11 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
@@ -45,26 +41,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Future;
 
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_error_appNotFound;
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_error_jobFailure;
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_error_jobServiceException;
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_error_nodeNotFound;
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_error_uploadFailed;
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_info_appNotFoundAutoCreate;
-import static io.jenkins.plugins.aipconsole.Messages.AddVersionBuilder_AddVersion_success_analysisComplete;
-import static io.jenkins.plugins.aipconsole.Messages.CreateApplicationBuilder_CreateApplication_error_jobServiceException;
-import static io.jenkins.plugins.aipconsole.Messages.GenericError_error_accessDenied;
-import static io.jenkins.plugins.aipconsole.Messages.GenericError_error_missingRequiredParameters;
-import static io.jenkins.plugins.aipconsole.Messages.GenericError_error_noApiKey;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
+import static io.jenkins.plugins.aipconsole.Messages.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AddVersionBuilderTest {
@@ -97,7 +76,7 @@ public class AddVersionBuilderTest {
 
     @InjectMocks
     private AddVersionBuilder addVersionBuilder;
-
+    private ApiInfoDto apiInfo;
     @Before
     public void setUp() throws Exception {
         AipConsoleGlobalConfiguration config = AipConsoleGlobalConfiguration.get();
@@ -105,8 +84,8 @@ public class AddVersionBuilderTest {
         config.setApiKey(Secret.fromString(TEST_KEY));
         addVersionBuilder = new AddVersionBuilder(TEST_APP_NAME, TEST_ARCHIVE_NAME);
         MockitoAnnotations.initMocks(this);
-        doReturn(ApiInfoDto.builder().apiVersion("1.12.0-DEV").build())
-                .when(restApiService).getAipConsoleApiInfo();
+        apiInfo = ApiInfoDto.builder().apiVersion("1.12.0-DEV").build();
+        doReturn(apiInfo).when(restApiService).getAipConsoleApiInfo();
     }
 
     @Test
@@ -339,7 +318,7 @@ public class AddVersionBuilderTest {
         doReturn(Collections.singletonList(new NodeDto(TEST_NODE_NAME, TEST_NODE_NAME, "http", "localhost", 8082)))
                 .when(restApiService).getForEntity(eq("/api/nodes"), isA(TypeReference.class));
         doReturn("createAppGuid")
-                .when(jobsService).startCreateApplication(TEST_APP_NAME, TEST_NODE_NAME, null, false);
+                .when(jobsService).startCreateApplication(TEST_APP_NAME, TEST_NODE_NAME, null, false, apiInfo.getApiVersion());
         doReturn(TEST_APP_NAME)
                 .when(jobsService).pollAndWaitForJobFinished(eq("createAppGuid"), any(), any(), any());
         doReturn(true)
